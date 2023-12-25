@@ -90,6 +90,42 @@ class users extends db_connection {
             parent::disconnect();  // Disconnect from the database in all cases
         }
     }
+    
+    public function login($loginUsername, $loginPassword) {
+        try {
+            parent::connect(); // Connect to the database
+
+            // Fetch user data based on the provided username
+            $sql = "SELECT id, password FROM users WHERE username = ?";
+            $stmt = mysqli_prepare(parent::get_connect(), $sql);
+
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, "s", $loginUsername);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_bind_result($stmt, $userId, $hashedPassword);
+
+                if (mysqli_stmt_fetch($stmt)) {
+                    // Verify the password
+                    if (password_verify($loginPassword, $hashedPassword)) {
+                        // Password is correct, set up the user session or other authentication logic
+                        // For now, let's just return the user ID
+                        return $userId;
+                    } else {
+                        throw new Exception("Incorrect password.");
+                    }
+                } else {
+                    throw new Exception("User not registered.");
+                }
+            } else {
+                throw new Exception("Failed to fetch user data.");
+            }
+        } catch (Exception $e) {
+            echo "Login failed: " . $e->getMessage();
+            return false;
+        } finally {
+            parent::disconnect();
+        }
+    }
 
 }
 

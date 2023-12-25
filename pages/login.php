@@ -1,29 +1,23 @@
 <?php
-session_start();
-include_once 'includes/db_connection.php';
+
+require_once '../classes/users.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
+    $loginUsername = $_POST['loginUsername'];
+    $loginPassword = $_POST['loginPassword'];
 
-    // Add validation for inputs
+    $user = new users('', $loginUsername, '', $loginPassword, '', '');
 
-    $db = new DBConnection();
-    $db->connect();
+    $userId = $user->login($loginUsername, $loginPassword);
 
-    $query = "SELECT * FROM Users WHERE email='$email'";
-    $result = mysqli_query($db->return_connect(), $query);
-    $user = mysqli_fetch_assoc($result);
-
-    if ($user && password_verify($password, $user['password'])) {
-        // Login successful, store user details in session
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['user_type'] = $user['type'];
-        echo "Login successful";
+    if ($userId !== false) {
+        // Login successful, set up the user session or redirect to a dashboard
+        session_start();
+        $_SESSION['user_id'] = $userId;
+        header('Location: dashboard.php'); // Replace with the desired redirect URL
+        exit();
     } else {
-        echo "Invalid email or password";
+        // Login failed, display an error message or redirect to the login page
+        // echo "Login failed. Please try again.";
     }
-
-    $db->disconnect();
 }
-?>

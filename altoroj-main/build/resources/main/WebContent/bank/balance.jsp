@@ -2,6 +2,12 @@
 <%@page import="com.ibm.security.appscan.altoromutual.util.DBUtil"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
+<%@page import="com.ibm.security.appscan.altoromutual.model.Account"%>
+<%@page import="java.text.SimpleDateFormat"%>
+<%@page import="java.text.NumberFormat"%>
+<%@page import="java.text.DecimalFormat"%>
+<%@page import="java.util.ArrayList"%>
+<%@page import="org.apache.commons.text.StringEscapeUtils"%>
 
 <%
 /**
@@ -21,40 +27,35 @@ ENVIRONMENT. YOU ACKNOWLEDGE AND ACCEPT ALL RISKS ASSOCIATED WITH THE USE OF THE
 IBM AltoroJ
 (c) Copyright IBM Corp. 2008, 2013 All Rights Reserved.
 */
-%> 
-    
+%>
+
 <jsp:include page="/header.jspf"/>
 
 <div id="wrapper" style="width: 99%;">
-	<jsp:include page="membertoc.jspf"/>
+    <jsp:include page="membertoc.jspf"/>
     <td valign="top" colspan="3" class="bb">
-		<%@page import="com.ibm.security.appscan.altoromutual.model.Account"%>
-		<%@page import="java.text.SimpleDateFormat"%>
-		<%@page import="java.text.NumberFormat"%>
-		<%@page import="java.text.DecimalFormat"%>
-		<%@page import="java.util.ArrayList"%><div class="fl" style="width: 99%;">
-		
-		<%
-					com.ibm.security.appscan.altoromutual.model.User user = (com.ibm.security.appscan.altoromutual.model.User)request.getSession().getAttribute("user"); 
-					ArrayList<Account> accounts = new ArrayList<Account>();
-					java.lang.String paramName = request.getParameter("acctId");
-					String accountName = paramName;
-													
-					for (Account account: user.getAccounts()){
-						
-						if (!String.valueOf(account.getAccountId()).equals(paramName))
-							accounts.add(account);
-						else {
-							accounts.add(0, account);
-							accountName = account.getAccountId() + " " + account.getAccountName();
-						}
-					}
-				%>
-		
-		<!-- To modify account information do not connect to SQL source directly.  Make all changes
-		through the admin page. -->
-		
-		<h1>Account History - <%=accountName%></h1>
+        <div class="fl" style="width: 99%;">
+            <%
+                com.ibm.security.appscan.altoromutual.model.User user = (com.ibm.security.appscan.altoromutual.model.User)request.getSession().getAttribute("user"); 
+                ArrayList<Account> accounts = new ArrayList<Account>();
+                java.lang.String paramName = request.getParameter("acctId");
+                String accountName = paramName;
+
+                for (Account account : user.getAccounts()) {
+                    if (!String.valueOf(account.getAccountId()).equals(paramName)) {
+                        accounts.add(account);
+                    } else {
+                        accounts.add(0, account);
+                        accountName = account.getAccountId() + " " + account.getAccountName();
+                    }
+                }
+                accountName = StringEscapeUtils.escapeHtml4(accountName);
+            %>
+
+            <!-- To modify account information do not connect to SQL source directly.  Make all changes
+            through the admin page. -->
+
+            <h1>Account History - <%=accountName%></h1>
 		
 		<table width="590" border="0">
 		  <tr>

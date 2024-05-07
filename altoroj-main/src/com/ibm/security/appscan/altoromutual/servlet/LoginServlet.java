@@ -18,9 +18,6 @@ IBM AltoroJ
 package com.ibm.security.appscan.altoromutual.servlet;
 
 import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
@@ -33,73 +30,78 @@ import com.ibm.security.appscan.Log4AltoroJ;
 import com.ibm.security.appscan.altoromutual.util.DBUtil;
 import com.ibm.security.appscan.altoromutual.util.ServletUtil;
 
+/**
+ * This servlet processes user's login and logout operations
+ * Servlet implementation class LoginServlet
+ * @author Alexei
+ */
 public class LoginServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-
+	private static final long serialVersionUID = 1L;
+	
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
     public LoginServlet() {
         super();
     }
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.removeAttribute(ServletUtil.SESSION_ATTR_USER);
-        }
-        response.sendRedirect("index.jsp");
-    }
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		//log out
+		try {
+			HttpSession session = request.getSession(false);
+			session.removeAttribute(ServletUtil.SESSION_ATTR_USER);
+		} catch (Exception e){
+			// do nothing
+		} finally {
+			response.sendRedirect("index.jsp");
+		}
+		
+	}
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        HttpSession session = request.getSession(true);
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		//log in
+		// Create session if there isn't one:
+		HttpSession session = request.getSession(true);
 
-        String username = request.getParameter("uid");
-        String password = request.getParameter("passw");
+		String username = null;
+		
+		try {
+			username = request.getParameter("uid");
+			if (username != null)
+				username = username.trim().toLowerCase();
+			
+			String password = request.getParameter("passw");
+			password = password.trim().toLowerCase(); //in real life the password usually is case sensitive and this cast would not be done
+			
+			if (!DBUtil.isValidUser(username, password)){
+				Log4AltoroJ.getInstance().logError("Login failed >>> User: " +username + " >>> Password: " + password);
+				throw new Exception("Login Failed: We're sorry, but this username or password was not found in our system. Please try again.");
+			}
+		} catch (Exception ex) {
+			request.getSession(true).setAttribute("loginError", ex.getLocalizedMessage());
+			response.sendRedirect("login.jsp");
+			return;
+		}
 
-        // Validate input parameters
-        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
-            // Invalid input
-            request.getSession(true).setAttribute("loginError", "Username or password cannot be empty.");
-            response.sendRedirect("login.jsp");
-            return;
-        }
+		//Handle the cookie using ServletUtil.establishSession(String)
+		try{
+			Cookie accountCookie = ServletUtil.establishSession(username,session);
+			response.addCookie(accountCookie);
+			response.sendRedirect(request.getContextPath()+"/bank/main.jsp");
+			}
+		catch (Exception ex){
+			ex.printStackTrace();
+			response.sendError(500);
+		}
+			
+		
+		return;
+	}
 
-        username = username.trim().toLowerCase(); // Sanitize username
-        password = password.trim(); // No need to convert to lowercase
-        
-        // Use parameterized query to prevent SQL injection
-        try {
-            if (!isValidUser(username, password)) {
-                Log4AltoroJ.getInstance().logError("Login failed >>> User: " + username);
-                throw new Exception("Login Failed: We're sorry, but this username or password was not found in our system. Please try again.");
-            }
-
-            // Handle the cookie using ServletUtil.establishSession(String)
-            try {
-                Cookie accountCookie = ServletUtil.establishSession(username, session);
-                response.addCookie(accountCookie);
-                response.sendRedirect(request.getContextPath() + "/bank/main.jsp");
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                response.sendError(500);
-            }
-        } catch (Exception ex) {
-            request.getSession(true).setAttribute("loginError", ex.getLocalizedMessage());
-            response.sendRedirect("login.jsp");
-        }
-    }
-
-    // Validate user credentials using parameterized query
-    private boolean isValidUser(String username, String password) throws SQLException {
-        String query = "SELECT COUNT(*) FROM users WHERE username = ? AND password = ?";
-        try (PreparedStatement statement = DBUtil.getConnection().prepareStatement(query)) {
-            statement.setString(1, username);
-            statement.setString(2, password);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    int count = resultSet.getInt(1);
-                    return count > 0;
-                }
-            }
-        }
-        return false;
-    }
 }

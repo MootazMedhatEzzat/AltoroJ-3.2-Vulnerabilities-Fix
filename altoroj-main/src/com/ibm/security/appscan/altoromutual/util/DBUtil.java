@@ -234,33 +234,42 @@ public class DBUtil {
 	 * @return user information
 	 * @throws SQLException
 	 */
-	public static User getUserInfo(String username) throws SQLException{
-		if (username == null || username.trim().length() == 0)
-			return null; 
-		
-		Connection connection = getConnection();
-		Statement statement = connection.createStatement();
-		ResultSet resultSet =statement.executeQuery("SELECT FIRST_NAME,LAST_NAME,ROLE FROM PEOPLE WHERE USER_ID = '"+ username +"' "); /* BAD - user input should always be sanitized */
+	public static User getUserInfo(String username) throws SQLException {
+    if (username == null || username.trim().length() == 0) {
+        return null;
+    }
 
-		String firstName = null;
-		String lastName = null;
-		String roleString = null;
-		if (resultSet.next()){
-			firstName = resultSet.getString("FIRST_NAME");
-			lastName = resultSet.getString("LAST_NAME");
-			roleString = resultSet.getString("ROLE");
-		}
-		
-		if (firstName == null || lastName == null)
-			return null;
-		
-		User user = new User(username, firstName, lastName);
-		
-		if (roleString.equalsIgnoreCase("admin"))
-			user.setRole(Role.Admin);
-		
-		return user;
-	}
+    String sql = "SELECT FIRST_NAME, LAST_NAME, ROLE FROM PEOPLE WHERE USER_ID = ?";
+    
+    try (Connection connection = getConnection();
+         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+         
+        preparedStatement.setString(1, username);
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        String firstName = null;
+        String lastName = null;
+        String roleString = null;
+
+        if (resultSet.next()) {
+            firstName = resultSet.getString("FIRST_NAME");
+            lastName = resultSet.getString("LAST_NAME");
+            roleString = resultSet.getString("ROLE");
+        }
+
+        if (firstName == null || lastName == null) {
+            return null;
+        }
+
+        User user = new User(username, firstName, lastName);
+
+        if (roleString != null && roleString.equalsIgnoreCase("admin")) {
+            user.setRole(Role.Admin);
+        }
+
+        return user;
+    }
+}
 
 	/**
 	 * Get all accounts for the specified user

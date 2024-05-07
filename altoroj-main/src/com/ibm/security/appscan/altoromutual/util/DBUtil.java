@@ -19,6 +19,7 @@ IBM AltoroJ
 package com.ibm.security.appscan.altoromutual.util;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -465,15 +466,20 @@ public class DBUtil {
 	}
 
 	public static String addAccount(String username, String acctType) {
-		try {
-			Connection connection = getConnection();
-			Statement statement = connection.createStatement();
-			statement.execute("INSERT INTO ACCOUNTS (USERID,ACCOUNT_NAME,BALANCE) VALUES ('"+username+"','"+acctType+"', 0)");
-			return null;
-		} catch (SQLException e){
-			return e.toString();
-		}
-	}
+    String sql = "INSERT INTO ACCOUNTS (USERID, ACCOUNT_NAME, BALANCE) VALUES (?, ?, 0)";
+    
+    try (Connection connection = getConnection();
+         PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+         
+        preparedStatement.setString(1, username);
+        preparedStatement.setString(2, acctType);
+        
+        preparedStatement.executeUpdate();
+        return null;
+    } catch (SQLException e) {
+        return e.toString();
+    }
+    }
 	
 	public static String addSpecialUser(String username, String password, String firstname, String lastname) {
 		try {

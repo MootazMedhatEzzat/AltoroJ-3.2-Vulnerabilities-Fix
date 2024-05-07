@@ -41,10 +41,10 @@ IBM AltoroJ
 		
 		<p>No results were found for the query:<br /><br />
 		
-		<%= query %>
+		<%= org.apache.commons.text.StringEscapeUtils.escapeHtml4(query) %>
 		
 		</div>    
     </td>	
 </div>
 
-<jsp:include page="footer.jspf"/>   
+<jsp:include page="footer.jspf"/>
